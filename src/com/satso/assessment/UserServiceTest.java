@@ -1,6 +1,7 @@
 package com.satso.assessment;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class UserServiceTest {
     @org.junit.Test
@@ -19,8 +20,8 @@ public class UserServiceTest {
         assertEquals(role, dto.getRole());
     }
 
-    //    @org.junit.Test
-    @org.junit.Test(expected=InvalidUserCredentialsException.class)
+        @org.junit.Test
+//    @org.junit.Test(expected=InvalidUserCredentialsException.class)
     public void testLoginSuccess() {
         // setup
         UserService sut = new UserService();
@@ -32,7 +33,7 @@ public class UserServiceTest {
 
         UserDto userDto = sut.login(new LoginRequest(username, password));
         // verify
-//        assertNotNull(userDto);  FIXME toggle with expected exception
+        assertNotNull(userDto);  // FIXME toggle with expected exception
     }
 
     //    @org.junit.Test
@@ -46,7 +47,9 @@ public class UserServiceTest {
         // test
         sut.createUser(new CreateUserRequest(username, password, role));
 
-        UserDto userDto = sut.login(new LoginRequest(username, password));
+        String invalidPassword = "invalidPassword";
+
+        UserDto userDto = sut.login(new LoginRequest(invalidPassword, password));
         // verify
 //        assertNull(userDto);  FIXME toggle with expected exception
     }

@@ -68,9 +68,12 @@ public class User {
                 if(loginRequest.getPassword().equals(password)){
                     return userDto;
                 }
+            }else {
+                throw new   InvalidUserCredentialsException("Password not found");
             }
+        } else {
+            throw new   InvalidUserCredentialsException("User not found");
         }
-
         return userDto;
     }// done
 
