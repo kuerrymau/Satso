@@ -114,9 +114,16 @@ public class User {
         }
     }
 
-    public void unlockUser() {
-        this.locked = false;
-        ConfigService.getInstance().setLoginRetries(0);
+    public void unlockUser(String username) {
+        UserDto userDto = load(username);
+        if (userDto != null) {
+            this.password = userDto.getPassword();
+            this.username = userDto.getUsername();
+            this.locked = false;
+            ConfigService.getInstance().setLoginRetries(0);
+
+            userRepo.save(this);
+        }
     }
 
     public UserDto load(String username) {
