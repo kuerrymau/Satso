@@ -26,7 +26,7 @@ public class UserService {
 
     public void unLockUser(String username) throws UserLockedException {
         try {
-            user.unlockUser();
+            user.unlockUser(username);
         } catch (Exception e) {
             e.printStackTrace();
         }
