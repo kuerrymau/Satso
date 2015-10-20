@@ -46,10 +46,10 @@ public class User {
     public UserDto createDto() {
         this.userDto = new UserDto(this);
         return userDto;
-    }// done
+    }
 
     public UserDto loadUser(String username) {
-        return new UserDto(userRepo.load(username)); // done
+        return new UserDto(userRepo.load(username));
 
     }
 
@@ -62,7 +62,7 @@ public class User {
         }
 
         UserDto userDto = load(loginRequest.getUsername());
-        if (userDto != null) {
+        if (userDto != null && !userDto.isLocked()) {
             String password = userDto.getPassword();
             if (password != null) {
                 if(loginRequest.getPassword().equals(password)){
@@ -75,9 +75,9 @@ public class User {
             throw new   InvalidUserCredentialsException("User not found");
         }
         return userDto;
-    }// done
+    }
 
-    public void changePassword(ChangePasswordRequest request) throws InvalidUserCredentialsException {// done
+    public void changePassword(ChangePasswordRequest request) throws InvalidUserCredentialsException {
         UserDto userDto = load(request.getUsername());
         if (userDto != null) {
             if (this.password.equals(request.getPassword())) {
@@ -92,7 +92,7 @@ public class User {
         }
     }
 
-    public boolean hasRole(HasRoleRequest request) {// done
+    public boolean hasRole(HasRoleRequest request) {
     boolean hasRole = false;
         User user = userRepo.load(request.getUsername());
         if (user != null) {
@@ -105,7 +105,7 @@ public class User {
         return hasRole;
     }
 
-    private void lock() throws  UserLockedException { // done
+    private void lock() throws  UserLockedException {
         int maximumTries = 3;
         int loginRetries = ConfigService.getInstance().getLoginRetries();
         if(loginRetries == maximumTries){
@@ -114,13 +114,13 @@ public class User {
         }
     }
 
-    public void unlockUser() { // done
+    public void unlockUser() {
         this.locked = false;
         ConfigService.getInstance().setLoginRetries(0);
     }
 
     public UserDto load(String username) {
-        return new UserDto(userRepo.load(username)); // done
+        return new UserDto(userRepo.load(username));
     }
 
     @Override
