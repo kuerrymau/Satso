@@ -12,7 +12,7 @@ public class UserRepository {
      *
      * @param user
      */
-    public HashMap<String, User> save(User user) { // FIXME remove return statement (put there for debugging)
+    public HashMap<String, User> save(User user) {
         map.put(user.getUsername(), user);
         return map;
     }
@@ -22,7 +22,7 @@ public class UserRepository {
      * @param username
      * @return
      */
-    public User load(String username) { // FIXME remove return statement (put there for debugging)
+    public User load(String username) {
         User user = map.get(username);
         return user;
     }

@@ -1,8 +1,5 @@
 package com.satso.assessment;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class UserService {
     private CreateUserRequest createUserRequest;
     private User user = new User();
@@ -33,12 +30,10 @@ public class UserService {
     }
 
     public void createUser(CreateUserRequest createUserRequest) {
-        User user = userRepo.load(createUserRequest.getUsername());
-        if (user == null) {
-            HashMap<String, User> userHashMap = userRepo.save(new User(createUserRequest));
-            for (Map.Entry entry : userHashMap.entrySet()) {
-                User user1 = (User) entry.getValue();
-                System.out.println("username=" + entry.getKey() + ", username=" + user1.getUsername());
+        if (createUserRequest.getPassword() != null && createUserRequest.getUsername() != null) {
+            User user = userRepo.load(createUserRequest.getUsername());
+            if (user == null) {
+                userRepo.save(new User(createUserRequest));
             }
         }
     }

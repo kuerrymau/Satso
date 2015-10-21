@@ -49,57 +49,68 @@ public class User {
     }
 
     public UserDto loadUser(String username) {
-        return new UserDto(userRepo.load(username));
-
+        UserDto userDto = null;
+        if (username != null) {
+            userDto = new UserDto(userRepo.load(username));
+        }
+        return userDto;
     }
 
-    public UserDto login(LoginRequest loginRequest) throws  InvalidUserCredentialsException {
-        ConfigService.getInstance().setLoginRetries(loginTries++);
-        try {
-            lock();
-        } catch (UserLockedException e) {
-            e.printStackTrace();
-        }
-
-        UserDto userDto = load(loginRequest.getUsername());
-        if (userDto != null && !userDto.isLocked()) {
-            String password = userDto.getPassword();
-            if (password != null) {
-                if(loginRequest.getPassword().equals(password)){
-                    return userDto;
-                }
-            }else {
-                throw new   InvalidUserCredentialsException("Password not found");
+    public UserDto login(LoginRequest loginRequest) throws InvalidUserCredentialsException {
+        UserDto userDto = null;
+        if (loginRequest.getPassword() != null && loginRequest.getUsername() != null) {
+            ConfigService.getInstance().setLoginRetries(++loginTries);
+            try {
+                lock();
+            } catch (UserLockedException e) {
+                e.printStackTrace();
             }
-        } else {
-            throw new   InvalidUserCredentialsException("User not found");
+
+            userDto = load(loginRequest.getUsername());
+            if (userDto != null && !userDto.isLocked()) {
+                String password = userDto.getPassword();
+                if (password != null) {
+                    if (loginRequest.getPassword().equals(password)) {
+                        return userDto;
+                    }
+                } else {
+                    throw new InvalidUserCredentialsException("Password not found");
+                }
+            } else {
+                throw new InvalidUserCredentialsException("User not found");
+            }
         }
         return userDto;
     }
 
     public void changePassword(ChangePasswordRequest request) throws InvalidUserCredentialsException {
-        UserDto userDto = load(request.getUsername());
-        if (userDto != null) {
-            if (this.password.equals(request.getPassword())) {
-                this.password = request.getNewPassword();
-                this.username = request.getUsername();
-                userRepo.save(this);
+        if (request.getPassword() != null && request.getUsername() != null) {
+            UserDto userDto = load(request.getUsername());
+            if (userDto != null) {
+                if (this.password.equals(request.getPassword())) {
+                    this.password = request.getNewPassword();
+                    this.username = request.getUsername();
+
+                    userRepo.save(this);
+                } else {
+                    throw new InvalidUserCredentialsException("Invalid user password used");
+                }
             } else {
-                throw new InvalidUserCredentialsException("Invalid use password used");
+                throw new InvalidUserCredentialsException("Invalid user username used");
             }
-        } else {
-            throw new InvalidUserCredentialsException("Invalid use username used");
         }
     }
 
     public boolean hasRole(HasRoleRequest request) {
-    boolean hasRole = false;
-        User user = userRepo.load(request.getUsername());
-        if (user != null) {
-            if (user.getRole() != null) {
-                hasRole = true;
-            } else {
-                hasRole = false;
+        boolean hasRole = false;
+        if (request.getUsername() != null) {
+            User user = userRepo.load(request.getUsername());
+            if (user != null) {
+                if (user.getRole() != null && !user.getRole().isEmpty()) {
+                    hasRole = true;
+                } else {
+                    hasRole = false;
+                }
             }
         }
         return hasRole;
@@ -110,24 +121,31 @@ public class User {
         int loginRetries = ConfigService.getInstance().getLoginRetries();
         if(loginRetries == maximumTries){
             this.locked = true;
+            userRepo.save(this);
             throw  new UserLockedException("Maximum loginTries reached for user");
         }
     }
 
     public void unlockUser(String username) {
-        UserDto userDto = load(username);
-        if (userDto != null) {
-            this.password = userDto.getPassword();
-            this.username = userDto.getUsername();
-            this.locked = false;
-            ConfigService.getInstance().setLoginRetries(0);
+        if (username != null) {
+            UserDto userDto = load(username);
+            if (userDto != null && userDto.isLocked()) {
+                this.password = userDto.getPassword();
+                this.username = userDto.getUsername();
+                this.locked = false;
 
-            userRepo.save(this);
+                userRepo.save(this);
+                ConfigService.getInstance().setLoginRetries(0);
+            }
         }
     }
 
     public UserDto load(String username) {
-        return new UserDto(userRepo.load(username));
+        UserDto userDto = null;
+        if (username != null) {
+            userDto = new UserDto(userRepo.load(username));
+        }
+        return userDto;
     }
 
     @Override
