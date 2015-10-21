@@ -59,7 +59,12 @@ public class User {
     public UserDto login(LoginRequest loginRequest) throws InvalidUserCredentialsException {
         UserDto userDto = null;
         if (loginRequest.getPassword() != null && loginRequest.getUsername() != null) {
+
+            this.password = loginRequest.getPassword();
+            this.username = loginRequest.getUsername();
+
             ConfigService.getInstance().setLoginRetries(++loginTries);
+
             try {
                 lock();
             } catch (UserLockedException e) {
