@@ -21,12 +21,18 @@ public class UserService {
         return user.hasRole(hasRoleRequest);
     }
 
-    public void unLockUser(String username) throws UserLockedException {
-        try {
-            user.unlockUser(username);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public void unLockUser(String username) {
+         user.unlockUser(username);
+    }
+
+    public void saveLockedUser(User user, boolean lockUser) {
+        user.setLocked(lockUser);
+
+        user.saveOrUpdateUser(user);
+    }
+
+    public void lock(UserDto userDto, int loginRetries) {
+        user.lock(userDto, loginRetries);
     }
 
     public void createUser(CreateUserRequest createUserRequest) {

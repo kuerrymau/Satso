@@ -8,6 +8,7 @@ public class User {
     private String password;
     private String role;
     private boolean locked = false;
+    private final static int MAXIMUM_LOGIN_RETRIES = 3;
     private int loginTries = ConfigService.getInstance().getLoginRetries();
 
     private UserRepository userRepo = new UserRepository();
@@ -49,7 +50,7 @@ public class User {
     }
 
     /**
-     * save or update User
+     * Save or update User
      * @param user
      */
     public void saveOrUpdateUser(User user){ // util method used for testing
@@ -57,7 +58,7 @@ public class User {
     }
 
     /**
-     * fetch User from repo
+     * Fetch User from repo
      * @param username
      * @return
      */
@@ -70,7 +71,7 @@ public class User {
     }
 
     /**
-     * returns user details only after successful login
+     * Returns user details only after successful login
      * @param loginRequest
      * @return
      * @throws InvalidUserCredentialsException
@@ -78,18 +79,6 @@ public class User {
     public UserDto login(LoginRequest loginRequest) throws InvalidUserCredentialsException {
         UserDto userDto = null;
         if (loginRequest.getPassword() != null && loginRequest.getUsername() != null) {
-
-            this.password = loginRequest.getPassword();
-            this.username = loginRequest.getUsername();
-
-            ConfigService.getInstance().setLoginRetries(++loginTries);
-
-            try {
-                lock();
-            } catch (UserLockedException e) {
-                e.printStackTrace();
-            }
-
             userDto = load(loginRequest.getUsername());
             if (userDto != null) {
                 if (!userDto.isLocked()) {
@@ -98,11 +87,17 @@ public class User {
                         if (loginRequest.getPassword().equals(password)) {
                             return userDto;
                         } else {
-                            throw new InvalidUserCredentialsException("Password not correct");
+                            ConfigService.getInstance().setLoginRetries(++loginTries);
+                            try {
+                                lock(userDto, ConfigService.getInstance().getLoginRetries());
+                            } catch (UserLockedException e) {
+                                throw new UserLockedException("Password is incorrect");
+                            }
                         }
                     } else {
                         throw new InvalidUserCredentialsException("Password not found");
                     }
+                    return null;
                 }
             } else {
                 throw new InvalidUserCredentialsException("User not found");
@@ -112,7 +107,7 @@ public class User {
     }
 
     /**
-     * checks if original password is valid and changes the passord
+     * Checks if original password is valid and changes the password
      * @param request
      * @throws InvalidUserCredentialsException
      */
@@ -135,7 +130,7 @@ public class User {
     }
 
     /**
-     * return true if User has role
+     * Returns true if User has role
      * @param request
      * @return
      */
@@ -157,15 +152,23 @@ public class User {
     /**
      * Keeps track of number of failed logins and locks after three failures
      * @throws UserLockedException
+     * @param userDto
      */
-    private void lock() throws  UserLockedException {
-        int maximumTries = 3;
-        int loginRetries = ConfigService.getInstance().getLoginRetries();
-        if(loginRetries == maximumTries){
-            this.locked = true;
-            saveOrUpdateUser(this);
+    public void lock(UserDto userDto, int loginRetries) throws  UserLockedException {
+        loginRetries = ConfigService.getInstance().getLoginRetries();
+        if(loginRetries >= MAXIMUM_LOGIN_RETRIES){
+
+            User user = new User(new CreateUserRequest(userDto.getUsername(), userDto.getPassword(), "newRole"));
+            saveLockedUser(user, true);
+
             throw  new UserLockedException("Maximum loginTries reached for user");
         }
+    }
+
+    public void saveLockedUser(User user, boolean lockUser) {
+        user.setLocked(lockUser);
+
+        saveOrUpdateUser(user);
     }
 
     /**
@@ -176,18 +179,19 @@ public class User {
         if (username != null) {
             UserDto userDto = load(username);
             if (userDto != null && userDto.isLocked()) {
-                this.password = userDto.getPassword();
-                this.username = userDto.getUsername();
-                this.locked = false;
 
-                saveOrUpdateUser(this);
+                User user = new User(new CreateUserRequest(userDto.getUsername(), userDto.getPassword(), userDto.getRole()));
+                user.setLocked(false);
+
+                saveOrUpdateUser(user);
+
                 ConfigService.getInstance().setLoginRetries(0);
             }
         }
     }
 
     /**
-     * fetches user from repo
+     * Fetches user from repo
      * @param username
      * @return
      */
@@ -196,8 +200,7 @@ public class User {
         if (username != null) {
             User user = loadUser(username);
             if(user != null){
-//                this.user = user; // FIXME
-                userDto = createDto();
+                userDto = new UserDto(user);
             }
         }
         return userDto;

@@ -1,11 +1,10 @@
 package com.satso.assessment;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class UserServiceTest {
     @org.junit.Test
-    public void testCreateUserSuccess() { // passed
+    public void testCreateUserSuccess() {
         // setup
         UserService sut = new UserService();
         String username = "username";
@@ -20,9 +19,8 @@ public class UserServiceTest {
         assertEquals(role, dto.getRole());
     }
 
-      @org.junit.Test
-//    @org.junit.Test(expected=InvalidUserCredentialsException.class)
-    public void testLoginSuccess() { // passed
+    @org.junit.Test(expected=InvalidUserCredentialsException.class)
+    public void testLoginSuccess() {
         // setup
         UserService sut = new UserService();
         String username = "username";
@@ -31,12 +29,12 @@ public class UserServiceTest {
         // test
         sut.createUser(new CreateUserRequest(username, password, role));
 
-        UserDto userDto = sut.login(new LoginRequest(username, password));
+        sut.login(new LoginRequest(username, password)); // successful
+//        sut.login(new LoginRequest(username, "newPassword")); // invalid password
         // verify
-        assertNotNull(userDto);  // FIXME toggle with expected exception
+//        assertNotNull(userDto);
     }
 
-//      @org.junit.Test
     @org.junit.Test(expected=InvalidUserCredentialsException.class)
     public void testLoginInvalidUsername() {
         // setup
@@ -49,12 +47,11 @@ public class UserServiceTest {
 
           String invalidUsername = "invalidUsername";
 
-         UserDto userDto = sut.login(new LoginRequest(invalidUsername, password));
-        // verify
-//        assertNull(userDto);  // FIXME toggle if you want assertNull
+          // verify
+          UserDto userDto = sut.login(new LoginRequest(invalidUsername, password));
+//        assertNull(userDto);
     }
 
-//      @org.junit.Test
     @org.junit.Test(expected=InvalidUserCredentialsException.class)
     public void testLoginInvalidPassword() {
         // setup
@@ -67,12 +64,11 @@ public class UserServiceTest {
 
         String invalidUsername = "invalidUsername";
 
-        UserDto userDto = sut.login(new LoginRequest(invalidUsername, password));
         // verify
-//        assertNull(userDto); // FIXME toggle if you want assertNull
+        UserDto userDto = sut.login(new LoginRequest(invalidUsername, password));
+//        assertNull(userDto);
     }
 
-//    @org.junit.Test
     @org.junit.Test(expected=InvalidUserCredentialsException.class)
     public void testChangePassword() {
         // setup
@@ -83,14 +79,10 @@ public class UserServiceTest {
         // test
         sut.createUser(new CreateUserRequest(username, password, role));
 
-        String newpassword = "newpassword";
-        sut.changePassword(new ChangePasswordRequest(newpassword, username, password));
-
-        UserDto dto = sut.loadUser(username);
         // verify
-        String myPassword = dto.getPassword();
-        System.out.println("newpassword=" + myPassword);
-//        assertEquals(newpassword, myPassword); // FIXME toggle if you want assertNull
+        String myNewPassword = "myNewPassword";
+        String anotherNewPassword = "anotherNewPassword";
+        sut.changePassword(new ChangePasswordRequest(myNewPassword, username, anotherNewPassword));
     }
 
     @org.junit.Test
@@ -103,16 +95,16 @@ public class UserServiceTest {
         // test
         sut.createUser(new CreateUserRequest(username, password, role));
 
+        String newRole = "newRole";
         boolean hasRole = sut.hasRole(new HasRoleRequest(username, role));
 
-        UserDto dto = sut.loadUser(username);
-        System.out.println("role=" + dto.getRole());
         // verify
+        UserDto dto = sut.loadUser(username);
         assertEquals(hasRole, true);
     }
 
-    @org.junit.Test
-//    @org.junit.Test(expected=UserLockedException.class)
+//    @org.junit.Test
+    @org.junit.Test(expected=UserLockedException.class)
     public void testUserLocked() {
         // setup
         UserService sut = new UserService();
@@ -122,13 +114,12 @@ public class UserServiceTest {
         // test
         sut.createUser(new CreateUserRequest(username, password, role));
 
-        int numberOfTries = 5;
-        for(int i = 0; i < numberOfTries; i++) {
-            sut.login(new LoginRequest(username, password));
-        }
+        // verify
         UserDto dto = sut.loadUser(username);
-        System.out.println("isLocked=" + dto.isLocked());
-        assertEquals(dto.isLocked(), false);  // FIXME toggle with expected exception
+
+        int loginRetries = 3;
+
+        sut.lock(dto, loginRetries);
     }
 
     @org.junit.Test
@@ -139,10 +130,22 @@ public class UserServiceTest {
         String password = "password";
         String role = "role";
         // test
-        sut.createUser(new CreateUserRequest(username, password, role));
+        CreateUserRequest createUserRequest = new CreateUserRequest(username, password, role);
+
+        sut.createUser(createUserRequest);
+
+        // verify
+        User user = new User(createUserRequest);
+
+        boolean lockUser = true;
+
+        sut.saveLockedUser(user, lockUser);
 
         sut.unLockUser(username);
-        // verify
+
+        UserDto dto = sut.loadUser(username);
+
         assertEquals(ConfigService.getInstance().getLoginRetries(), 0);
+        assertEquals(dto.isLocked(), false);
     }
 }
