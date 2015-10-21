@@ -3,7 +3,6 @@ package com.satso.assessment;
 import java.util.Objects;
 
 public class User {
-    private User user;
     private UserDto userDto;
     private String username;
     private String password;
@@ -45,7 +44,7 @@ public class User {
     }
 
     public UserDto createDto() {
-        this.userDto = new UserDto(user);
+        this.userDto = new UserDto(this);
         return userDto;
     }
 
@@ -197,7 +196,7 @@ public class User {
         if (username != null) {
             User user = loadUser(username);
             if(user != null){
-                this.user = user;
+//                this.user = user; // FIXME
                 userDto = createDto();
             }
         }
