@@ -13,6 +13,7 @@ public class UserRepository {
      * @param user
      */
     public HashMap<String, User> save(User user) {
+//        System.out.println("username=" + user.getUsername() + ", password" + user.getPassword());
         map.put(user.getUsername(), user);
         return map;
     }
@@ -24,6 +25,7 @@ public class UserRepository {
      */
     public User load(String username) {
         User user = map.get(username);
+//        System.out.println("user=" + user);
         return user;
     }
 }

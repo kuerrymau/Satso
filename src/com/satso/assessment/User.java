@@ -3,6 +3,7 @@ package com.satso.assessment;
 import java.util.Objects;
 
 public class User {
+    private User user;
     private UserDto userDto;
     private String username;
     private String password;
@@ -44,18 +45,37 @@ public class User {
     }
 
     public UserDto createDto() {
-        this.userDto = new UserDto(this);
+        this.userDto = new UserDto(user);
         return userDto;
     }
 
-    public UserDto loadUser(String username) {
-        UserDto userDto = null;
+    /**
+     * save or update User
+     * @param user
+     */
+    public void saveOrUpdateUser(User user){ // util method used for testing
+        userRepo.save(user);
+    }
+
+    /**
+     * fetch User from repo
+     * @param username
+     * @return
+     */
+    public User loadUser(String username) {
+        User user = null;
         if (username != null) {
-            userDto = new UserDto(userRepo.load(username));
+            user = userRepo.load(username);
         }
-        return userDto;
+        return user;
     }
 
+    /**
+     * returns user details only after successful login
+     * @param loginRequest
+     * @return
+     * @throws InvalidUserCredentialsException
+     */
     public UserDto login(LoginRequest loginRequest) throws InvalidUserCredentialsException {
         UserDto userDto = null;
         if (loginRequest.getPassword() != null && loginRequest.getUsername() != null) {
@@ -72,14 +92,18 @@ public class User {
             }
 
             userDto = load(loginRequest.getUsername());
-            if (userDto != null && !userDto.isLocked()) {
-                String password = userDto.getPassword();
-                if (password != null) {
-                    if (loginRequest.getPassword().equals(password)) {
-                        return userDto;
+            if (userDto != null) {
+                if (!userDto.isLocked()) {
+                    String password = userDto.getPassword();
+                    if (password != null) {
+                        if (loginRequest.getPassword().equals(password)) {
+                            return userDto;
+                        } else {
+                            throw new InvalidUserCredentialsException("Password not correct");
+                        }
+                    } else {
+                        throw new InvalidUserCredentialsException("Password not found");
                     }
-                } else {
-                    throw new InvalidUserCredentialsException("Password not found");
                 }
             } else {
                 throw new InvalidUserCredentialsException("User not found");
@@ -88,15 +112,20 @@ public class User {
         return userDto;
     }
 
+    /**
+     * checks if original password is valid and changes the passord
+     * @param request
+     * @throws InvalidUserCredentialsException
+     */
     public void changePassword(ChangePasswordRequest request) throws InvalidUserCredentialsException {
-        if (request.getPassword() != null && request.getUsername() != null) {
+        if (request.getPassword() != null) {
             UserDto userDto = load(request.getUsername());
             if (userDto != null) {
-                if (this.password.equals(request.getPassword())) {
+                if (userDto.getPassword().equals(request.getPassword())) {
                     this.password = request.getNewPassword();
                     this.username = request.getUsername();
 
-                    userRepo.save(this);
+                    saveOrUpdateUser(this);
                 } else {
                     throw new InvalidUserCredentialsException("Invalid user password used");
                 }
@@ -106,12 +135,17 @@ public class User {
         }
     }
 
+    /**
+     * return true if User has role
+     * @param request
+     * @return
+     */
     public boolean hasRole(HasRoleRequest request) {
         boolean hasRole = false;
         if (request.getUsername() != null) {
-            User user = userRepo.load(request.getUsername());
+            User user = loadUser(request.getUsername());
             if (user != null) {
-                if (user.getRole() != null && !user.getRole().isEmpty()) {
+                if ((user.getRole() != null && !user.getRole().isEmpty()) && user.getRole() == request.getRole()) {
                     hasRole = true;
                 } else {
                     hasRole = false;
@@ -121,16 +155,24 @@ public class User {
         return hasRole;
     }
 
+    /**
+     * Keeps track of number of failed logins and locks after three failures
+     * @throws UserLockedException
+     */
     private void lock() throws  UserLockedException {
         int maximumTries = 3;
         int loginRetries = ConfigService.getInstance().getLoginRetries();
         if(loginRetries == maximumTries){
             this.locked = true;
-            userRepo.save(this);
+            saveOrUpdateUser(this);
             throw  new UserLockedException("Maximum loginTries reached for user");
         }
     }
 
+    /**
+     * Unlocks a User and resets the login retries
+     * @param username
+     */
     public void unlockUser(String username) {
         if (username != null) {
             UserDto userDto = load(username);
@@ -139,16 +181,25 @@ public class User {
                 this.username = userDto.getUsername();
                 this.locked = false;
 
-                userRepo.save(this);
+                saveOrUpdateUser(this);
                 ConfigService.getInstance().setLoginRetries(0);
             }
         }
     }
 
+    /**
+     * fetches user from repo
+     * @param username
+     * @return
+     */
     public UserDto load(String username) {
         UserDto userDto = null;
         if (username != null) {
-            userDto = new UserDto(userRepo.load(username));
+            User user = loadUser(username);
+            if(user != null){
+                this.user = user;
+                userDto = createDto();
+            }
         }
         return userDto;
     }
