@@ -18,6 +18,7 @@ public final class UserDto {
     public String getRole() {
         return user.getRole();
     }
+
     public boolean isLocked(){
         return user.isLocked();
     }

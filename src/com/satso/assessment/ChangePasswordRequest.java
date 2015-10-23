@@ -1,6 +1,6 @@
 package com.satso.assessment;
 
-public final class ChangePasswordRequest {
+public class ChangePasswordRequest extends LoginRequest{
 	private String newPassword;
 	private String username;
 	private String password;
@@ -19,15 +19,7 @@ public final class ChangePasswordRequest {
 		return username;
 	}
 
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
 	public String getPassword() {
 		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
 	}
 }
