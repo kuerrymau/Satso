@@ -155,8 +155,8 @@ public class User {
      * @param userDto
      */
     public void lock(UserDto userDto, int loginRetries) throws  UserLockedException {
-        loginRetries = ConfigService.getInstance().getLoginRetries();
-        if(loginRetries >= MAXIMUM_LOGIN_RETRIES){
+//        loginRetries = ConfigService.getInstance().getLoginRetries();
+        if(this.loginTries >= loginRetries){
 
             User user = new User(new CreateUserRequest(userDto.getUsername(), userDto.getPassword(), "newRole"));
             saveLockedUser(user, true);
